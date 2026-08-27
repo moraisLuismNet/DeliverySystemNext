@@ -167,6 +167,17 @@ export class PaymentService implements IPaymentService {
           this.debugLog(`Sending confirmation email to: ${toEmail}`);
           try {
             await brevoEmailProvider.sendEmailAsync(toEmail, subject, emailBody);
+            this.debugLog(`Email sent to ${toEmail}`);
+            await emailQueueRepository.create({
+              OrderId: order.Id,
+              ToEmail: toEmail,
+              Subject: subject,
+              Body: emailBody,
+              Status: "Sent",
+              RetryCount: 0,
+              CreatedAt: now,
+              SentAt: now,
+            });
           } catch (emailError: any) {
             this.debugLog(
               `Direct email failed (${emailError?.message}), enqueueing for: ${toEmail}`,
@@ -187,6 +198,16 @@ export class PaymentService implements IPaymentService {
             this.debugLog(`Sending WhatsApp confirmation to: ${user.PhoneNumber}`);
             try {
               await openWAProvider.sendMessageAsync(user.PhoneNumber, message);
+              this.debugLog(`WhatsApp message sent to ${user.PhoneNumber}`);
+              await notificationQueueRepository.create({
+                PhoneNumber: user.PhoneNumber,
+                Message: message,
+                OrderId: order.Id,
+                Status: "Sent",
+                RetryCount: 0,
+                CreatedAt: now,
+                SentAt: now,
+              });
             } catch (waError: any) {
               this.debugLog(
                 `Direct WhatsApp failed (${waError?.message}), enqueueing for: ${user.PhoneNumber}`,
