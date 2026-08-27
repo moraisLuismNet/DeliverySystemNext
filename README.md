@@ -93,7 +93,6 @@ DeliverySystemNext/
 │   │   ├── layout.tsx              # Root layout (Bootstrap + PrimeReact)
 │   │   └── page.tsx                # Root redirect to /delivery/restaurants
 │   ├── components/
-│   │   ├── cart/                   # CartSync
 │   │   ├── common/                 # BootstrapClient, ProtectedRoute
 │   │   └── layout/                 # Layout, Navbar, Footer
 │   ├── db/
@@ -201,19 +200,23 @@ DeliverySystemNext/
 | `categoryService` | Category CRUD |
 | `cartService` | Cart management with stock validation, checkout orchestration |
 | `orderService` | Order lifecycle management |
-| `paymentService` | Stripe session creation, payment confirmation, email/notification queuing |
+| `paymentService` | Stripe session creation, payment confirmation, direct email/WhatsApp delivery (queued on failure) |
 | `emailQueueService` | Email queue management |
 | `notificationService` | WhatsApp + email queue reads |
 | `brevoEmailProvider` | Brevo (SendinBlue) email sending |
 | `openWAProvider` | OpenWA WhatsApp message sending |
 | `openWASessionService` | OpenWA session management (status, QR, create, delete) |
 
-## Workers & Queues
+## Notification Delivery
 
-Background workers run on the local PC alongside the OpenWA Docker container:
+Order confirmations are sent **directly** during payment confirmation (in `paymentService.confirmPaymentAsync`):
 
-- **emailWorker** - Polls `EmailQueues` table, sends emails via Brevo, marks as sent/failed
-- **notificationWorker** - Polls `NotificationQueues` table, sends WhatsApp messages via OpenWA, marks as sent/failed
+- **Email (Brevo)** — sent immediately via `brevoEmailProvider`; on failure, queued as `Pending` in the `EmailQueues` table.
+- **WhatsApp (OpenWA)** — sent immediately via `openWAProvider` (phone number is normalized to an international `chatId`); on failure, queued as `Pending` in the `NotificationQueues` table.
+- Successful direct sends are recorded with status `Sent` and a `SentAt` timestamp so admins can track them.
+- The admin queues (`/delivery/admin/messages`, `/delivery/admin/mails`) show both successful (`Sent`) and pending/failed records.
+
+> Note: Items left as `Pending` require processing (there is no always-on background worker; this is a serverless app on Vercel). Ensure the external providers are reachable from Vercel (authorize Vercel's outbound IPs in Brevo, and keep the OpenWA session ready).
 
 ## Getting Started
 
@@ -253,6 +256,7 @@ EMAIL_ADMIN_EMAIL=your@email.com
 OPENWA_BASE_URL=https://correct-tinwork-both.ngrok-free.dev/api
 OPENWA_API_KEY=owa_...
 OPENWA_SESSION_ID=delivery-session
+OPENWA_DEFAULT_COUNTRY_CODE=34  # prepended when the phone number has no country code
 
 # App
 NEXT_PUBLIC_APP_URL=https://delivery-system-next.vercel.app
