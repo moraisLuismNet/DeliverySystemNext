@@ -5,11 +5,36 @@ export class OpenWAWhatsAppProvider implements IWhatsAppProvider {
   private baseUrl: string;
   private apiKey: string;
   private sessionName: string;
+  private defaultCountryCode: string;
 
   constructor() {
     this.baseUrl = process.env.OPENWA_BASE_URL || "http://localhost:2785/api";
     this.apiKey = process.env.OPENWA_API_KEY || "";
     this.sessionName = process.env.OPENWA_SESSION_ID || "delivery-session";
+    this.defaultCountryCode = process.env.OPENWA_DEFAULT_COUNTRY_CODE || "34";
+  }
+
+  private normalizePhoneNumber(phoneNumber: string): string {
+    let digits = phoneNumber
+      .replace(/\+/g, "")
+      .replace(/-/g, "")
+      .replace(/ /g, "")
+      .replace(/\(/g, "")
+      .replace(/\)/g, "");
+
+    if (digits.startsWith("00")) {
+      digits = digits.slice(2);
+    }
+
+    const hasCountryCode =
+      digits.length > 9 ||
+      digits.startsWith(this.defaultCountryCode);
+
+    if (!hasCountryCode && /^[679]/.test(digits)) {
+      digits = this.defaultCountryCode + digits;
+    }
+
+    return digits;
   }
 
   private async resolveSessionId(): Promise<string> {
@@ -29,9 +54,7 @@ export class OpenWAWhatsAppProvider implements IWhatsAppProvider {
   async sendMessageAsync(phoneNumber: string, message: string): Promise<void> {
     try {
       const sessionId = await this.resolveSessionId();
-      const chatId =
-        phoneNumber.replace("+", "").replace(/-/g, "").replace(/ /g, "") +
-        "@c.us";
+      const chatId = this.normalizePhoneNumber(phoneNumber) + "@c.us";
       await axios.post(
         `${this.baseUrl}/sessions/${sessionId}/messages/send-text`,
         { chatId, text: message },
