@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const restaurants = await restaurantService.getActiveAsync();
     return ResponseHelper.success("Active restaurants retrieved successfully", restaurants);
   } catch (error: any) {
-    return ResponseHelper.error(error.message);
+    console.error("GET /api/restaurants/active failed:", error?.stack || error);
+    return ResponseHelper.error(error?.message || "Internal server error", error?.stack || String(error));
   }
 }
