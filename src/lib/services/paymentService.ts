@@ -4,6 +4,8 @@ import orderRepository from "../db/repositories/OrderRepository";
 import userRepository from "../db/repositories/UserRepository";
 import emailQueueRepository from "../db/repositories/EmailQueueRepository";
 import notificationQueueRepository from "../db/repositories/NotificationQueueRepository";
+import brevoEmailProvider from "./brevoEmailProvider";
+import openWAProvider from "./openWAProvider";
 import { CheckoutSessionResponseDTO } from "../dtos/Payment/CheckoutSessionResponseDTO";
 import { CreateCheckoutSessionDTO } from "../dtos/Payment/CreateCheckoutSessionDTO";
 import { ConfirmPaymentDTO } from "../dtos/Payment/ConfirmPaymentDTO";
@@ -160,29 +162,46 @@ export class PaymentService implements IPaymentService {
               <p style="font-size:0.8em;color:#999;text-align:center;">This is an automated message.</p>
             </div>`;
 
-          this.debugLog(`Creating email queue for: ${user?.Email || order.UserId}`);
-          await emailQueueRepository.create({
-            OrderId: order.Id,
-            ToEmail: user?.Email || order.UserId,
-            Subject: "Order Confirmation - Payment Received",
-            Body: emailBody,
-            Status: "Pending",
-            RetryCount: 0,
-            CreatedAt: now,
-          });
-
-          if (user?.PhoneNumber) {
-            this.debugLog(`Creating notification queue for: ${user.PhoneNumber}`);
-            const scheduledAt = new Date(now.getTime() + 1 * 60000);
-            await notificationQueueRepository.create({
-              PhoneNumber: user.PhoneNumber,
-              Message: `Hello ${user.Name}, your order #${order.Id} has arrived. Enjoy your meal!`,
+          const toEmail = user?.Email || order.UserId;
+          const subject = "Order Confirmation - Payment Received";
+          this.debugLog(`Sending confirmation email to: ${toEmail}`);
+          try {
+            await brevoEmailProvider.sendEmailAsync(toEmail, subject, emailBody);
+          } catch (emailError: any) {
+            this.debugLog(
+              `Direct email failed (${emailError?.message}), enqueueing for: ${toEmail}`,
+            );
+            await emailQueueRepository.create({
               OrderId: order.Id,
+              ToEmail: toEmail,
+              Subject: subject,
+              Body: emailBody,
               Status: "Pending",
               RetryCount: 0,
               CreatedAt: now,
-              ScheduledAt: scheduledAt,
             });
+          }
+
+          if (user?.PhoneNumber) {
+            const message = `Hello ${user.Name}, your order #${order.Id} has arrived. Enjoy your meal!`;
+            this.debugLog(`Sending WhatsApp confirmation to: ${user.PhoneNumber}`);
+            try {
+              await openWAProvider.sendMessageAsync(user.PhoneNumber, message);
+            } catch (waError: any) {
+              this.debugLog(
+                `Direct WhatsApp failed (${waError?.message}), enqueueing for: ${user.PhoneNumber}`,
+              );
+              const scheduledAt = new Date(now.getTime() + 1 * 60000);
+              await notificationQueueRepository.create({
+                PhoneNumber: user.PhoneNumber,
+                Message: message,
+                OrderId: order.Id,
+                Status: "Pending",
+                RetryCount: 0,
+                CreatedAt: now,
+                ScheduledAt: scheduledAt,
+              });
+            }
           }
         }
       }
