@@ -8,7 +8,12 @@ import Payment from "./Payment";
 import EmailQueue from "./EmailQueue";
 import NotificationQueue from "./NotificationQueue";
 
+let setupDone = false;
+
 export function setupAssociations() {
+  if (setupDone) return;
+  setupDone = true;
+
   Cart.hasMany(CartItem, {
     foreignKey: "CartId",
     as: "Items",
