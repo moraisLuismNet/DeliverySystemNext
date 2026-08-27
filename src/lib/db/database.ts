@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize";
+import pg from "pg";
 
 let sequelizeInstance: Sequelize | null = null;
 
@@ -19,6 +20,7 @@ export function getSequelize(): Sequelize {
     try {
       sequelizeInstance = new Sequelize(databaseUrl, {
         dialect: "postgres",
+        dialectModule: pg as any,
         logging: false,
         define: { timestamps: false, freezeTableName: true, underscored: false },
         pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },

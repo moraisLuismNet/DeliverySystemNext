@@ -48,3 +48,5 @@ next-env.d.ts
 !.vscode/extensions.json
 .history/*
 .editorconfig
+.vercel
+.env*
