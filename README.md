@@ -12,6 +12,7 @@ Multi-restaurant food delivery platform built with Next.js 15 App Router, TypeSc
 - Checkout with Stripe Checkout Sessions for secure card payments
 - Track order history and order details in real-time
 - WhatsApp delivery notifications via OpenWA
+- Installable PWA (web manifest + service worker) for mobile/desktop
 
 ### For Administrators
 
@@ -35,6 +36,7 @@ Multi-restaurant food delivery platform built with Next.js 15 App Router, TypeSc
 | **State** | Zustand 5 |
 | **Forms** | React Hook Form + Zod validation |
 | **UI** | Bootstrap 5 + PrimeReact + PrimeIcons |
+| **PWA** | Web manifest + service worker (offline/installable) |
 | **Hosting** | Vercel (Next.js) + local PC (OpenWA + ngrok) |
 
 ## Architecture
@@ -108,6 +110,10 @@ DeliverySystemNext/
 │   ├── store/                      # Zustand stores (auth, cart)
 │   └── utils/                      # fetch-api, errorHandling
 ├── middleware.ts                    # Root Next.js middleware (rate limiting)
+├── public/
+│   ├── manifest.json                # PWA web manifest
+│   ├── sw.js                        # Service worker (offline/installable)
+│   └── icons/                       # PWA icons (192/512 + maskable)
 ├── next.config.ts
 ├── tsconfig.json
 ├── postcss.config.mjs
