@@ -84,9 +84,9 @@ export class CartService implements ICartService {
     const menuItem = await menuItemRepository.getById(item.MenuItemId);
     if (!menuItem) throw new Error("Menu item not found");
 
-    if (dto.quantity > menuItem.Stock) throw new Error("Insufficient stock");
-
     const diff = dto.quantity - item.Quantity;
+    if (diff > 0 && diff > menuItem.Stock) throw new Error("Insufficient stock");
+
     await menuItemRepository.update(item.MenuItemId, {
       Stock: menuItem.Stock - diff,
       UpdatedAt: new Date(),
