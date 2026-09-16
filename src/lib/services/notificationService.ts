@@ -2,6 +2,7 @@ import notificationQueueRepository from "../db/repositories/NotificationQueueRep
 import emailQueueRepository from "../db/repositories/EmailQueueRepository";
 import { QueueStatus } from "../db/models/QueueStatus";
 import openWAProvider from "./openWAProvider";
+import brevoEmailProvider from "./brevoEmailProvider";
 import { INotificationService } from "./interfaces/INotificationService";
 
 export class NotificationService implements INotificationService {
@@ -40,6 +41,42 @@ export class NotificationService implements INotificationService {
           RetryCount: retryCount,
           ErrorMessage: (error?.message || "Unknown error").slice(0, 1000),
           ScheduledAt: new Date(now.getTime() + backoffMinutes * 60000),
+        });
+        result.failed += 1;
+      }
+    }
+
+    return result;
+  }
+
+  async processPendingEmailsAsync(): Promise<{ processed: number; sent: number; failed: number }> {
+    const now = new Date();
+    const pending = await emailQueueRepository.getPendingAsync();
+    const result = { processed: pending.length, sent: 0, failed: 0 };
+
+    for (const email of pending) {
+      if (email.RetryCount >= NotificationService.maxRetries) {
+        await emailQueueRepository.update(email.Id, {
+          Status: QueueStatus.Failed,
+          RetryCount: email.RetryCount + 1,
+          ErrorMessage: "Exceeded maximum retry attempts",
+        });
+        result.failed += 1;
+        continue;
+      }
+
+      try {
+        await brevoEmailProvider.sendEmailAsync(email.ToEmail, email.Subject || "", email.Body || "");
+        await emailQueueRepository.update(email.Id, {
+          Status: QueueStatus.Sent,
+          SentAt: now,
+          ErrorMessage: null,
+        });
+        result.sent += 1;
+      } catch (error: any) {
+        await emailQueueRepository.update(email.Id, {
+          RetryCount: (email.RetryCount || 0) + 1,
+          ErrorMessage: (error?.message || "Unknown error").slice(0, 1000),
         });
         result.failed += 1;
       }

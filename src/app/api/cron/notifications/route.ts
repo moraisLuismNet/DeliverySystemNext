@@ -24,8 +24,9 @@ export async function GET(request: NextRequest) {
 
   try {
     ensureDb();
-    const result = await notificationService.processPendingWhatsAppAsync();
-    return ResponseHelper.success("Pending WhatsApp notifications processed", result);
+    const whatsApp = await notificationService.processPendingWhatsAppAsync();
+    const emails = await notificationService.processPendingEmailsAsync();
+    return ResponseHelper.success("Pending notifications processed", { whatsApp, emails });
   } catch (error: any) {
     return ResponseHelper.error(error.message);
   }

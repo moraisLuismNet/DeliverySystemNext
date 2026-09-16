@@ -3,4 +3,5 @@ export interface INotificationService {
   getAllWhatsAppAsync(): Promise<any[]>;
   getAllEmailsAsync(): Promise<any[]>;
   processPendingWhatsAppAsync(): Promise<{ processed: number; sent: number; failed: number }>;
+  processPendingEmailsAsync(): Promise<{ processed: number; sent: number; failed: number }>;
 }
