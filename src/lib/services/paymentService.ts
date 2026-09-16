@@ -219,6 +219,7 @@ export class PaymentService implements IPaymentService {
                 OrderId: order.Id,
                 Status: "Pending",
                 RetryCount: 0,
+                ErrorMessage: (waError?.message || "Unknown error").slice(0, 1000),
                 CreatedAt: now,
                 ScheduledAt: scheduledAt,
               });

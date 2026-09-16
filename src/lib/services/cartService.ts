@@ -48,7 +48,11 @@ export class CartService implements ICartService {
       Stock: menuItem.Stock - dto.quantity,
       UpdatedAt: new Date(),
     });
-    await this.checkLowStockAndAlertAsync(menuItem.Name, menuItem.Stock - dto.quantity);
+    try {
+      await this.checkLowStockAndAlertAsync(menuItem.Name, menuItem.Stock - dto.quantity);
+    } catch (alertError: any) {
+      console.error("Low stock alert failed:", alertError?.message);
+    }
 
     const existingItem = await cartItemRepository.getByCartAndMenuItemAsync(cart.Id, dto.menuItemId);
     if (existingItem) {
@@ -88,7 +92,11 @@ export class CartService implements ICartService {
       UpdatedAt: new Date(),
     });
     if (dto.quantity > item.Quantity) {
-      await this.checkLowStockAndAlertAsync(menuItem.Name, menuItem.Stock - diff);
+      try {
+        await this.checkLowStockAndAlertAsync(menuItem.Name, menuItem.Stock - diff);
+      } catch (alertError: any) {
+        console.error("Low stock alert failed:", alertError?.message);
+      }
     }
 
     if (dto.quantity <= 0) {

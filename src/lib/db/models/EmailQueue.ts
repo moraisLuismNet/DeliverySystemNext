@@ -40,7 +40,6 @@ EmailQueue.init(
     OrderId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      defaultValue: 0,
       references: { model: "Orders", key: "Id" },
     },
     ToEmail: {
