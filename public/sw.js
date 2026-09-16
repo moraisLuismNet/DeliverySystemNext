@@ -1,4 +1,4 @@
-const CACHE_NAME = "delivery-system-v1";
+const CACHE_NAME = "delivery-system-v2";
 const PRECACHE_URLS = ["/", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -31,6 +31,9 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) return;
+
+  // Never cache API requests: freshness matters (cart, orders, auth, etc.)
+  if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

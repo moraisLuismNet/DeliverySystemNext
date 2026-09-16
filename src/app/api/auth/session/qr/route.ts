@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const sessionStatus = await openWASessionService.getSessionStatusAsync(resolvedId);
     const st = sessionStatus?.status || "unknown";
-    return ResponseHelper.success("Session status", { status: st });
+    return ResponseHelper.success("Session status", { status: st, phone: sessionStatus?.phone || "" });
   } catch (error: any) {
     if (error.message === "No authentication token provided") return ResponseHelper.unauthorized();
     return ResponseHelper.error(error.message);

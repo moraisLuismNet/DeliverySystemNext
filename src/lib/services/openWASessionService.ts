@@ -32,7 +32,7 @@ class OpenWASessionService {
   async getSessionStatusAsync(sessionName: string): Promise<{ id: string; name: string; status: string; phone?: string } | null> {
     try {
       const res = await this.http.get<SessionDto[]>("/sessions");
-      const match = res.data.find((s) => s.name === sessionName);
+      const match = res.data.find((s) => s.id === sessionName || s.name === sessionName);
       return match ? { id: match.id, name: match.name, status: match.status, phone: match.phone } : null;
     } catch {
       return null;
