@@ -43,7 +43,7 @@ Multi-restaurant food delivery platform built with Next.js 15 App Router, TypeSc
 
 ```
 ┌─────────────────────────────────────────────┐
-│              Vercel (Production)             │
+│              Vercel (Production)            │
 │  Next.js 15 App Router (API + Frontend)     │
 │  https://delivery-system-next.vercel.app    │
 └──────┬──────────────┬───────────────────────┘
